@@ -1,5 +1,5 @@
 provider "aws" {
-  region = var.region
+  region = var.aws_region
 }
 
 resource "aws_s3_bucket" "tf-iams3-bucket" {
@@ -126,7 +126,7 @@ resource "aws_s3_bucket_acl" "public_read_acl" {
 resource "aws_s3_object" "example" {
   bucket = aws_s3_bucket.tf-iams3-bucket.id
   key    = "test/test.html" # Object name in S3
-  source = "test.html"      # Local file to upload
+  source = "modules/s3_mount/test.html"      # Local file to upload
   acl    = "public-read"    # Grants public read access
   depends_on = [
     aws_s3_bucket_acl.public_read_acl,
@@ -135,18 +135,6 @@ resource "aws_s3_object" "example" {
   ]
 }
 
-# module "ec2_instance" {
-#   source         = "./modules/ec2_instance"
-#   ami_id         = var.ami_id
-#   instance_type  = var.instance_type
-#   key_name       = var.key_name
-#   aws_access_key = var.aws_access_key
-#   aws_secret_key = var.aws_secret_key
-#   region         = var.region
-#   bucket_var     = aws_s3_bucket.tf-iams3-bucket.bucket
-#   depends_on     = [aws_s3_bucket.tf-iams3-bucket]
-
-# }
 
 resource "aws_iam_role" "ec2_s3_role" {
   name = "ubuntu_ec2_s3_role"
@@ -174,25 +162,25 @@ resource "aws_iam_instance_profile" "ec2_profile" {
   role = aws_iam_role.ec2_s3_role.name
 }
 
+# Need to delete later below
+# resource "aws_security_group" "ec2_sg" {
+#   name        = "ubuntu_ec2_sg"
+#   description = "Allow SSH"
 
-resource "aws_security_group" "ec2_sg" {
-  name        = "ubuntu_ec2_sg"
-  description = "Allow SSH"
+#   ingress {
+#     from_port   = 22
+#     to_port     = 22
+#     protocol    = "tcp"
+#     cidr_blocks = ["0.0.0.0/0"]
+#   }
 
-  ingress {
-    from_port   = 22
-    to_port     = 22
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-}
+#   egress {
+#     from_port   = 0
+#     to_port     = 0
+#     protocol    = "-1"
+#     cidr_blocks = ["0.0.0.0/0"]
+#   }
+# }
 
 
 resource "aws_instance" "ubuntu_s3_mounter" {
@@ -200,7 +188,9 @@ resource "aws_instance" "ubuntu_s3_mounter" {
   instance_type        = var.instance_type
   key_name             = var.key_name
   iam_instance_profile = aws_iam_instance_profile.ec2_profile.name
-  security_groups      = [aws_security_group.ec2_sg.name]
+  # security_groups      = [var.sg_name]
+  vpc_security_group_ids = [var.sg_id]
+  subnet_id = var.subnet_id
   tags = {
     Name = "Ubuntu-S3-Mounter"
   }

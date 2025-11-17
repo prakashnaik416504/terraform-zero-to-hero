@@ -1,0 +1,21 @@
+# Terraform plugin and state files
+.terraform/
+*.tfstate
+*.tfstate.*
+crash.log
+*.log
+*.tfvars
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+.terraformrc
+terraform.rc
+
+# OS-specific
+.DS_Store
+Thumbs.db
+
+# IDE-specific
+.vscode/
+.idea/
